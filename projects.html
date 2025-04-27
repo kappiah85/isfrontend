@@ -41,13 +41,18 @@
     </footer>
 
     <script>
+        // Set API base URL for production or local
+        const API_BASE_URL = window.location.hostname.includes('localhost')
+            ? 'http://localhost:3000'
+            : 'https://isbackend.onrender.com';
+
         document.addEventListener('DOMContentLoaded', () => {
             loadProjects();
             setupFilters();
         });
 
         function loadProjects(category = '', tag = '') {
-            let url = 'http://localhost:3000/api/projects';
+            let url = `${API_BASE_URL}/api/projects`;
             if (category || tag) {
                 url += '?';
                 if (category) url += `category=${category}`;
