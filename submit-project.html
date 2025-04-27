@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Project - Innovation Showcase</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <i class="fas fa-lightbulb"></i>
+                <span>Innovation Showcase</span>
+            </div>
+            <div class="nav-actions">
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="projects.html">Projects</a></li>
+                    <li><a href="submit-project.html" class="active">Submit Project</a></li>
+                    <li><a href="login.html">Login</a></li>
+                    <li><a href="signup.html">Sign Up</a></li>
+                </ul>
+                <div class="profile-menu">
+                    <img src="https://ui-avatars.com/api/?name=U&background=dc2626&color=fff" alt="User Avatar" class="avatar">
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="submit-container">
+            <form class="submit-card" id="projectForm">
+                <h2>Submit Your Project</h2>
+                <label for="title">Project Title</label>
+                <input type="text" id="title" name="title" required>
+                <label for="description">Project Description</label>
+                <textarea id="description" name="description" rows="5" required></textarea>
+                <label for="category">Category</label>
+                <select id="category" name="category" required>
+                    <option value="">Select a category</option>
+                    <option value="technology">Technology</option>
+                    <option value="science">Science</option>
+                    <option value="engineering">Engineering</option>
+                    <option value="art">Art</option>
+                    <option value="business">Business</option>
+                </select>
+                <label for="tags">Tags (comma separated)</label>
+                <input type="text" id="tags" name="tags" placeholder="e.g., AI, Robotics, Innovation">
+                <label for="files">Project Files</label>
+                <input type="file" id="files" name="files" multiple>
+                <small>You can upload multiple files (PDF, images, documents)</small>
+                <label for="video">Video Link (optional)</label>
+                <input type="url" id="video" name="video" placeholder="https://youtube.com/...">
+                <button type="submit" class="btn btn-primary">Submit Project</button>
+            </form>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-bottom">
+            <p>&copy; 2024 Innovation Showcase Portal. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Check if user is logged in
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user) {
+            window.location.href = 'login.html';
+        }
+
+        document.getElementById('projectForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const token = localStorage.getItem('token');
+
+            // Show loading state
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.textContent;
+            submitButton.disabled = true;
+            submitButton.textContent = 'Submitting...';
+
+            try {
+                const response = await fetch('http://localhost:3000/api/projects', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showSuccess('Project submitted successfully!');
+                    setTimeout(() => {
+                        window.location.href = 'projects.html';
+                    }, 2000);
+                } else {
+                    showError(data.message || 'Project submission failed. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('An error occurred. Please try again.');
+            } finally {
+                // Reset button state
+                submitButton.disabled = false;
+                submitButton.textContent = originalButtonText;
+            }
+        });
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+
+            const existingError = document.querySelector('.error-message');
+            if (existingError) {
+                existingError.remove();
+            }
+
+            const form = document.getElementById('projectForm');
+            form.insertBefore(errorDiv, form.firstChild);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.textContent = message;
+
+            const existingSuccess = document.querySelector('.success-message');
+            if (existingSuccess) {
+                existingSuccess.remove();
+            }
+
+            const form = document.getElementById('projectForm');
+            form.insertBefore(successDiv, form.firstChild);
+        }
+    </script>
+
+    <style>
+        body {
+            background: var(--background-color);
+        }
+        .submit-container {
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .submit-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+            padding: 2.5rem 2rem 2rem 2rem;
+            max-width: 500px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            border: 1.5px solid var(--primary-light);
+        }
+        .submit-card h2 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        .submit-card label {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+        .submit-card input[type="text"],
+        .submit-card input[type="url"],
+        .submit-card input[type="file"],
+        .submit-card textarea,
+        .submit-card select {
+            padding: 0.75rem 1rem;
+            border: 1.5px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border 0.2s;
+            background: var(--background-color);
+        }
+        .submit-card input[type="text"]:focus,
+        .submit-card input[type="url"]:focus,
+        .submit-card input[type="file"]:focus,
+        .submit-card textarea:focus,
+        .submit-card select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            background: #fff;
+        }
+        .submit-card textarea {
+            resize: vertical;
+        }
+        .submit-card small {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        .btn-primary {
+            background: var(--primary-color);
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+        .error-message {
+            background-color: #ff6b6b;
+            color: white;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        .success-message {
+            background-color: #1dd1a1;
+            color: white;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        @media (max-width: 600px) {
+            .submit-card {
+                padding: 1.5rem 0.5rem;
+            }
+        }
+    </style>
+</body>
+</html> 
