@@ -88,6 +88,9 @@
             submitButton.textContent = 'Signing up...';
 
             try {
+                console.log('Attempting registration...'); // Debug log
+                console.log('Registration data:', { name, email, role }); // Debug log (excluding password)
+                
                 const response = await fetch(`${API_BASE_URL}/api/register`, {
                     method: 'POST',
                     headers: {
@@ -102,7 +105,9 @@
                     })
                 });
 
+                console.log('Response status:', response.status); // Debug log
                 const data = await response.json();
+                console.log('Response data:', data); // Debug log
 
                 if (response.ok) {
                     showSuccess('Registration successful! Redirecting to login...');

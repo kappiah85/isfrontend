@@ -65,18 +65,34 @@
     </footer>
 
     <script>
+        // Set API base URL for production or local
+        const API_BASE_URL = window.location.hostname.includes('localhost')
+            ? 'http://localhost:3000'
+            : 'https://isbackend-i56s.onrender.com';
+
         // Check if user is logged in
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user) {
-            window.location.href = 'login.html';
-        }
+        const checkAuth = () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+        };
+
+        // Check auth on page load
+        document.addEventListener('DOMContentLoaded', checkAuth);
 
         document.getElementById('projectForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const formData = new FormData(this);
             const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
 
+            const formData = new FormData(this);
+            
             // Show loading state
             const submitButton = this.querySelector('button[type="submit"]');
             const originalButtonText = submitButton.textContent;
@@ -84,7 +100,7 @@
             submitButton.textContent = 'Submitting...';
 
             try {
-                const response = await fetch('https://isbackend.onrender.com/api/projects', {
+                const response = await fetch(`${API_BASE_URL}/api/projects`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`
