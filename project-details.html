@@ -21,9 +21,10 @@
     </header>
 
     <main>
-        <div class="project-details-container">
+        <div class="project-container">
             <div id="projectDetails">
                 <!-- Project details will be loaded here -->
+                <div class="loading">Loading project details...</div>
             </div>
         </div>
     </main>
@@ -33,198 +34,198 @@
     </footer>
 
     <script>
-        // Check if user is logged in
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user) {
-            window.location.href = 'login.html';
-        }
+        // Set API base URL for production or local
+        const API_BASE_URL = window.location.hostname.includes('localhost')
+            ? 'http://localhost:3000'
+            : 'https://isbackend-i56s.onrender.com';
 
-        // Get project ID from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const projectId = urlParams.get('id');
-
-        if (!projectId) {
-            window.location.href = 'projects.html';
-        }
-
-        // Load project details
-        async function loadProjectDetails() {
-            try {
-                const response = await fetch(`http://localhost:3000/api/projects/${projectId}`);
-                const data = await response.json();
-
-                if (data.success) {
-                    displayProjectDetails(data.project);
-                } else {
-                    showError('Project not found');
-                }
-            } catch (error) {
-                console.error('Error loading project:', error);
-                showError('An error occurred while loading the project');
+        document.addEventListener('DOMContentLoaded', async () => {
+            const projectId = new URLSearchParams(window.location.search).get('id');
+            
+            if (!projectId) {
+                showError('Project ID is missing');
+                return;
             }
-        }
 
-        function displayProjectDetails(project) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`);
+                
+                if (response.status === 404) {
+                    showError('Project not found');
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Failed to load project');
+                }
+
+                const data = await response.json();
+                
+                if (!data.success || !data.project) {
+                    showError('Project data is invalid');
+                    return;
+                }
+
+                displayProject(data.project);
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Failed to load project details');
+            }
+        });
+
+        function displayProject(project) {
             const projectDetails = document.getElementById('projectDetails');
             projectDetails.innerHTML = `
-                <div class="project-header">
-                    <h1>${project.title}</h1>
-                    <div class="project-meta">
-                        <span class="category">${project.category}</span>
-                        <span class="date">${new Date(project.createdAt).toLocaleDateString()}</span>
-                    </div>
+                <h1>${project.title}</h1>
+                <div class="project-meta">
+                    <span class="category">${project.category}</span>
+                    <span class="status">${project.status}</span>
                 </div>
-
-                <div class="project-content">
-                    <div class="project-description">
-                        <h2>Description</h2>
-                        <p>${project.description}</p>
+                <p class="description">${project.description}</p>
+                ${project.tags ? `
+                    <div class="tags">
+                        ${project.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
                     </div>
-
-                    ${project.files && project.files.length > 0 ? `
-                        <div class="project-files">
-                            <h2>Files</h2>
-                            <div class="file-grid">
-                                ${project.files.map(file => `
-                                    <div class="file-item">
-                                        <a href="http://localhost:3000/uploads/${file}" target="_blank">
-                                            <img src="http://localhost:3000/uploads/${file}" alt="Project file">
-                                        </a>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    ` : ''}
-
-                    ${project.video ? `
-                        <div class="project-video">
-                            <h2>Video</h2>
-                            <div class="video-container">
-                                <iframe src="${project.video}" frameborder="0" allowfullscreen></iframe>
-                            </div>
-                        </div>
-                    ` : ''}
-
-                    <div class="project-tags">
-                        <h2>Tags</h2>
-                        <div class="tags">
-                            ${project.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                ` : ''}
+                ${project.files ? `
+                    <div class="files">
+                        <h3>Project Files</h3>
+                        <div class="file-grid">
+                            ${project.files.map(file => `
+                                <div class="file-item">
+                                    <a href="${API_BASE_URL}/uploads/${file}" target="_blank">
+                                        <img src="${API_BASE_URL}/uploads/${file}" alt="Project file">
+                                    </a>
+                                </div>
+                            `).join('')}
                         </div>
                     </div>
-                </div>
+                ` : ''}
+                ${project.video ? `
+                    <div class="video">
+                        <h3>Project Video</h3>
+                        <div class="video-container">
+                            <iframe src="${project.video}" frameborder="0" allowfullscreen></iframe>
+                        </div>
+                    </div>
+                ` : ''}
             `;
         }
 
         function showError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-message';
-            errorDiv.textContent = message;
-
-            const main = document.querySelector('main');
-            main.insertBefore(errorDiv, main.firstChild);
+            const projectDetails = document.getElementById('projectDetails');
+            projectDetails.innerHTML = `
+                <div class="error-message">
+                    <h2>Error</h2>
+                    <p>${message}</p>
+                    <a href="projects.html" class="btn btn-primary">Back to Projects</a>
+                </div>
+            `;
         }
-
-        // Load project details when page loads
-        loadProjectDetails();
     </script>
 
     <style>
-        .project-details-container {
+        .project-container {
             max-width: 1200px;
             margin: 2rem auto;
-            padding: 0 2rem;
+            padding: 0 1rem;
         }
-
-        .project-header {
-            margin-bottom: 2rem;
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
         }
-
-        .project-header h1 {
-            margin-bottom: 0.5rem;
+        .error-message {
+            text-align: center;
+            padding: 2rem;
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
         }
-
+        .error-message h2 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        .error-message p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
         .project-meta {
             display: flex;
             gap: 1rem;
-            color: #666;
+            margin: 1rem 0;
         }
-
+        .category, .status {
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
         .category {
-            color: #3498db;
-            font-weight: bold;
+            background: var(--primary-light);
+            color: var(--primary-color);
         }
-
-        .project-content {
-            display: grid;
-            gap: 2rem;
+        .status {
+            background: #e2e8f0;
+            color: #64748b;
         }
-
-        .project-description h2,
-        .project-files h2,
-        .project-video h2,
-        .project-tags h2 {
-            margin-bottom: 1rem;
-            color: #2c3e50;
+        .description {
+            line-height: 1.6;
+            color: var(--text-primary);
+            margin: 1.5rem 0;
         }
-
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+        .tag {
+            background: #f1f5f9;
+            color: #64748b;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.9rem;
+        }
+        .files {
+            margin: 2rem 0;
+        }
         .file-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 1rem;
+            margin-top: 1rem;
         }
-
+        .file-item {
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
         .file-item img {
             width: 100%;
             height: 150px;
             object-fit: cover;
-            border-radius: 4px;
+            transition: transform 0.2s;
         }
-
+        .file-item:hover img {
+            transform: scale(1.05);
+        }
+        .video {
+            margin: 2rem 0;
+        }
         .video-container {
             position: relative;
-            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            padding-bottom: 56.25%;
             height: 0;
             overflow: hidden;
+            margin-top: 1rem;
         }
-
         .video-container iframe {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-        }
-
-        .tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .tag {
-            background: #f0f0f0;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.8rem;
-        }
-
-        .error-message {
-            background-color: #ff6b6b;
-            color: white;
-            padding: 1rem;
-            border-radius: 4px;
-            margin-bottom: 1rem;
-            text-align: center;
-        }
-
-        @media (max-width: 768px) {
-            .project-details-container {
-                padding: 0 1rem;
-            }
-
-            .file-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            }
         }
     </style>
 </body>
